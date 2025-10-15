@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/style.css">
+
+    <title>Team Registration</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="js/Test1.js"></script>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<script>
+    // Load the navbar dynamically
+    fetch("navbar.html")
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("navbar-container").innerHTML = data;
+        });
+</script>
+
+<h2>Register a Team</h2>
+<form id="teamForm">
+    <label for="teamName">Team Name:</label><br>
+    <input type="text" id="teamName" required><br><br>
+
+        <label for="managerEmail">Manager Email:</label><br>
+        <input type="email" id="managerEmail" required><br><br>
+
+            <button onclick ="registerTeam()">Register Team</button>
+</form>
+
+<p id="statusMessage"></p>
+
+<script>
+    document.getElementById("teamForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const teamName = document.getElementById("teamName").value;
+    const managerEmail = document.getElementById("managerEmail").value;
+
+    db.collection("teams").add({
+    teamName: teamName,
+    managerEmail: managerEmail,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+})
+    .then(() => {
+    document.getElementById("statusMessage").innerText = "✅ Team registered successfully!";
+    document.getElementById("teamForm").reset();
+})
+    .catch((error) => {
+    console.error("Error adding team: ", error);
+    document.getElementById("statusMessage").innerText = "❌ Error: " + error.message;
+});
+});
+
+    function registerTeam() {
+        const teamName = document.getElementById("teamName").value;
+        const managerEmail = document.getElementById("managerEmail").value;
+
+        db.collection("teams").add({
+            teamName: teamName,
+            managerEmail: managerEmail,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        })
+            .then(() => {
+                alert("✅ Team registered successfully!");
+            })
+            .catch((error) => {
+                alert("❌ Failed to register team: " + error.message);
+                console.error(error);
+            });
+    }
+
+</script>
+<script>
+    function toggleTheme() {
+        document.body.classList.toggle("dark-mode");
+    }
+</script>
+
+</body>
+</html>

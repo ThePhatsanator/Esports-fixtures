@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/style.css">
+    <title>Dashboard</title>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/Test1.js"></script>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<script>
+    // Load the navbar dynamically
+    fetch("navbar.html")
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("navbar-container").innerHTML = data;
+        });
+</script>
+
+<!-- 🌙 Dark/Light Toggle Button -->
+<button id="theme-toggle">🌙 Toggle Dark/Light</button>
+
+<h2>Dashboard</h2>
+<button onclick="logout()">Logout</button>
+
+<script>
+    // ===== AUTH LOGIC =====
+    function logout() {
+        auth.signOut().then(() => window.location.href = "index.html");
+    }
+
+    auth.onAuthStateChanged(user => {
+        if (!user) window.location.href = "index.html";
+    });
+
+    // ===== THEME TOGGLE =====
+    function applyTheme(theme) {
+        if (theme === "dark") {
+            document.body.classList.add("dark-mode");
+        } else {
+            document.body.classList.remove("dark-mode");
+        }
+    }
+
+    // Load saved theme
+    let savedTheme = localStorage.getItem("theme") || "light";
+    applyTheme(savedTheme);
+
+    // Button toggle
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        let currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
+        let newTheme = currentTheme === "dark" ? "light" : "dark";
+
+        applyTheme(newTheme);
+        localStorage.setItem("theme", newTheme); // Remember user choice
+    });
+</script>
+
+<div id="banner-container"></div>
+
+<script>
+    fetch("banner.html")
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("banner-container").innerHTML = data;
+        });
+</script>
+
+</body>
+</html>

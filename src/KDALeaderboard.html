@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/style.css">
+
+
+    <title>KDA Leaderboard</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="js/Test1.js"></script>
+<!--    <button onclick="toggleTheme()">🌙 Toggle Dark/Light</button>-->
+
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<script>
+    // Load the navbar dynamically
+    fetch("navbar.html")
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("navbar-container").innerHTML = data;
+        });
+</script>
+
+<h2>KDA Leaderboard</h2>
+
+<table border="1" cellpadding="10">
+    <thead>
+    <tr>
+        <th>Rank</th>
+        <th>Player Name</th>
+        <th>Gamer Tag</th>
+        <th>Role</th>
+        <th>Avg. KDA</th>
+    </tr>
+    </thead>
+    <tbody id="leaderboardBody">
+    <tr><td colspan="5">Loading...</td></tr>
+    </tbody>
+</table>
+
+<script>
+    const dbRef = db;
+    const leaderboardBody = document.getElementById("leaderboardBody");
+
+    const playerData = {}; // Store player stats here
+
+    // Step 1: Get all match stats
+    dbRef.collection("matchStats").get().then((querySnapshot) => {
+        const statEntries = [];
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (!playerData[data.playerId]) {
+                playerData[data.playerId] = {
+                    totalKDA: 0,
+                    matches: 0
+                };
+            }
+
+            playerData[data.playerId].totalKDA += parseFloat(data.kda);
+            playerData[data.playerId].matches += 1;
+        });
+
+        // Step 2: Get player info
+        return dbRef.collection("players").get();
+    }).then((querySnapshot) => {
+        const leaderboard = [];
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const stats = playerData[doc.id];
+
+            if (stats) {
+                const avgKDA = (stats.totalKDA / stats.matches).toFixed(2);
+                leaderboard.push({
+                    playerName: data.playerName,
+                    gamerTag: data.gamerTag,
+                    role: data.role,
+                    avgKDA: parseFloat(avgKDA)
+                });
+            }
+        });
+
+        // Step 3: Sort & display
+        leaderboard.sort((a, b) => b.avgKDA - a.avgKDA);
+
+        leaderboardBody.innerHTML = "";
+
+        leaderboard.forEach((player, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${player.playerName}</td>
+          <td>${player.gamerTag}</td>
+          <td>${player.role}</td>
+          <td>${player.avgKDA}</td>
+        `;
+            leaderboardBody.appendChild(row);
+        });
+
+        if (leaderboard.length === 0) {
+            leaderboardBody.innerHTML = "<tr><td colspan='5'>No player stats found.</td></tr>";
+        }
+    }).catch((error) => {
+        console.error("Error loading leaderboard:", error);
+        leaderboardBody.innerHTML = "<tr><td colspan='5'>Error loading leaderboard.</td></tr>";
+    });
+</script>
+<script>
+    function toggleTheme() {
+        document.body.classList.toggle("dark-mode");
+    }
+</script>
+
+
+<div id="banner-container"></div>
+
+<script>
+    fetch("banner.html")
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("banner-container").innerHTML = data;
+        });
+</script>
+
+</body>
+</html>

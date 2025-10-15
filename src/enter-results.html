@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/style.css">
+
+    <title>Enter Match Results</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="js/Test1.js"></script>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<script>
+    // Load the navbar dynamically
+    fetch("navbar.html")
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("navbar-container").innerHTML = data;
+        });
+</script>
+
+<h2>Enter Match Result</h2>
+
+<label for="fixtureSelect">Select Fixture:</label>
+<select id="fixtureSelect"></select><br><br>
+
+<label for="winner">Winning Team:</label>
+<select id="winner">
+    <option disabled selected>Select winning team</option>
+</select><br><br>
+
+<button onclick="loadPlayers()">Load Players</button>
+
+<div id="playerStatsSection" style="margin-top:20px;"></div>
+
+<button onclick="submitResults()">Submit Results</button>
+
+<script>
+    let selectedFixtureId = "";
+    let players = [];
+
+    // Load fixtures
+    db.collection("fixtures").get().then((querySnapshot) => {
+        const fixtureSelect = document.getElementById("fixtureSelect");
+        fixtureSelect.innerHTML = "";
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const option = document.createElement("option");
+            option.value = doc.id;
+            option.text = `${data.teamA} vs ${data.teamB} (${data.date || "No Date"})`;
+            fixtureSelect.appendChild(option);
+        });
+    });
+
+    function loadPlayers() {
+        selectedFixtureId = document.getElementById("fixtureSelect").value;
+        if (!selectedFixtureId) return alert("Please select a fixture");
+
+        const fixtureRef = db.collection("fixtures").doc(selectedFixtureId);
+        fixtureRef.get().then((doc) => {
+            const fixture = doc.data();
+            const teams = [fixture.teamA, fixture.teamB];
+
+            const winnerSelect = document.getElementById("winner");
+                    winnerSelect.innerHTML = `
+          <option disabled selected>Select winning team</option>
+          <option value="${fixture.teamA}">${fixture.teamA}</option>
+          <option value="${fixture.teamB}">${fixture.teamB}</option>
+        `;
+
+
+            db.collection("players")
+                .where("teamId", "in", teams)
+                .get()
+                .then((querySnapshot) => {
+                    players = [];
+                    const section = document.getElementById("playerStatsSection");
+                    section.innerHTML = "<h3>Player Stats</h3>";
+
+                    querySnapshot.forEach((doc) => {
+                        const player = doc.data();
+                        player.id = doc.id;
+                        players.push(player);
+
+                        section.innerHTML += `
+                <div>
+                  <strong>${player.playerName} (${player.gamerTag}) - ${player.role}</strong><br>
+                  Kills: <input type="number" id="kills-${player.id}" value="0" />
+                  Deaths: <input type="number" id="deaths-${player.id}" value="1" />
+                  Assists: <input type="number" id="assists-${player.id}" value="0" />
+                </div><br>
+              `;
+                    });
+                });
+        });
+    }
+
+    function submitResults() {
+        const winner = document.getElementById("winner").value;
+        if (!winner) return alert("Enter winning team name.");
+
+        // Update the fixture result
+        db.collection("fixtures").doc(selectedFixtureId).update({
+            result: winner
+        });
+
+        // Save each player's KDA
+        players.forEach((player) => {
+            const kills = parseInt(document.getElementById(`kills-${player.id}`).value) || 0;
+            const deaths = parseInt(document.getElementById(`deaths-${player.id}`).value) || 1;
+            const assists = parseInt(document.getElementById(`assists-${player.id}`).value) || 0;
+
+            const kda = ((kills + assists) / deaths).toFixed(2);
+
+            db.collection("matchStats").add({
+                fixtureId: selectedFixtureId,
+                playerId: player.id,
+                kills: kills,
+                deaths: deaths,
+                assists: assists,
+                kda: parseFloat(kda),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+
+        alert("✅ Match result and player stats submitted!");
+    }
+</script>
+<script>
+    function toggleTheme() {
+        document.body.classList.toggle("dark-mode");
+    }
+</script>
+
+
+<div id="banner-container"></div>
+
+<script>
+    fetch("banner.html")
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("banner-container").innerHTML = data;
+        });
+</script>
+
+</body>
+</html>

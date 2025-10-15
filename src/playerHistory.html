@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="css/style.css">
+
+
+  <title>Player Match History</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="js/Test1.js"></script>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<script>
+  // Load the navbar dynamically
+  fetch("navbar.html")
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById("navbar-container").innerHTML = data;
+          });
+</script>
+
+<h2>Player Match History</h2>
+
+<label for="playerSelect">Select Player:</label>
+<select id="playerSelect">
+  <option selected disabled>Loading players...</option>
+</select>
+<button onclick="loadMatchHistory()">Load History</button>
+
+<div id="historyDisplay" style="margin-top: 20px;"></div>
+
+<script>
+  const playerSelect = document.getElementById("playerSelect");
+  const historyDisplay = document.getElementById("historyDisplay");
+
+  // Step 1: Populate dropdown with players
+  db.collection("players").get().then((querySnapshot) => {
+    playerSelect.innerHTML = '<option disabled selected>Select a player</option>';
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const option = document.createElement("option");
+      option.value = doc.id;
+      option.textContent = `${data.playerName} (${data.gamerTag})`;
+      playerSelect.appendChild(option);
+    });
+  });
+
+  // Step 2: Load history for selected player
+  function loadMatchHistory() {
+    const playerId = playerSelect.value;
+    if (!playerId) return alert("Please select a player");
+
+    historyDisplay.innerHTML = "<p>Loading match history...</p>";
+
+    db.collection("matchStats")
+            .where("playerId", "==", playerId)
+            .orderBy("createdAt", "desc")
+            .get()
+            .then((querySnapshot) => {
+              if (querySnapshot.empty) {
+                historyDisplay.innerHTML = "<p>No match history found for this player.</p>";
+                return;
+              }
+
+              let table = `<table border="1" cellpadding="10">
+                        <thead>
+                          <tr>
+                            <th>Match Date</th>
+                            <th>Fixture</th>
+                            <th>Kills</th>
+                            <th>Deaths</th>
+                            <th>Assists</th>
+                            <th>KDA</th>
+                          </tr>
+                        </thead>
+                        <tbody>`;
+
+              const promises = [];
+
+              querySnapshot.forEach((doc) => {
+                const stat = doc.data();
+                const fixturePromise = db.collection("fixtures").doc(stat.fixtureId).get();
+                promises.push(fixturePromise.then((fixtureDoc) => {
+                  const fixture = fixtureDoc.exists ? fixtureDoc.data() : {};
+                  const date = fixture.date || "N/A";
+                  const fixtureLabel = fixture.teamA && fixture.teamB
+                          ? `${fixture.teamA} vs ${fixture.teamB}`
+                          : "Unknown Fixture";
+
+                  table += `
+                <tr>
+                  <td>${date}</td>
+                  <td>${fixtureLabel}</td>
+                  <td>${stat.kills}</td>
+                  <td>${stat.deaths}</td>
+                  <td>${stat.assists}</td>
+                  <td>${stat.kda}</td>
+                </tr>`;
+                }));
+              });
+
+              Promise.all(promises).then(() => {
+                table += "</tbody></table>";
+                historyDisplay.innerHTML = table;
+              });
+            })
+            .catch((error) => {
+              console.error("Error loading match history:", error);
+              historyDisplay.innerHTML = "<p>Error loading match history.</p>";
+            });
+  }
+</script>
+<script>
+  function toggleTheme() {
+    document.body.classList.toggle("dark-mode");
+  }
+</script>
+
+<div id="banner-container"></div>
+
+<script>
+  fetch("banner.html")
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById("banner-container").innerHTML = data;
+          });
+</script>
+
+</body>
+</html>

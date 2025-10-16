@@ -1,103 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Sports Fixtures</title>
+    <title>E-Sports Fixtures | Dashboard</title>
 
+    <!-- 🔗 CSS -->
     <link rel="stylesheet" href="css/style.css">
 
-
+    <!-- 🔥 Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-
+    <!-- ⚙️ Your Firebase Config + Theme Handling -->
     <script src="js/Test1.js" defer></script>
-
-<link rel="icon" href="images/logo.png" type="image/png">
 </head>
 
 <body>
+<!-- ===== NAVBAR ===== -->
 <div id="navbar-container"></div>
 
 <script>
-    // Load the navbar dynamically
     fetch("navbar.html")
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById("navbar-container").innerHTML = data;
-        });
+        .then(res => res.text())
+        .then(html => document.getElementById("navbar-container").innerHTML = html)
+        .catch(err => console.error("Navbar load failed:", err));
 </script>
 
-<!-- 🌙 Dark/Light Toggle Button -->
-<button id="theme-toggle">🌙 Toggle Dark/Light</button>
+<!-- ===== THEME TOGGLE ===== -->
+<div class="container" style="text-align: right; margin-top: 10px;">
+    <button id="theme-toggle">🌙 Toggle Dark/Light</button>
+</div>
 
-<h2>Dashboard</h2>
-<button onclick="logout()">Logout</button>
+<!-- ===== MAIN CONTENT ===== -->
+<main class="container">
+    <h2>Welcome to the Dashboard</h2>
+    <p>Use the navigation above to manage teams, players, fixtures, and view results.</p>
+
+    <button onclick="logout()">Logout</button>
+</main>
 
 <script>
-    // ===== AUTH LOGIC =====
+    // Ensure logout works globally
     function logout() {
-        auth.signOut().then(() => window.location.href = "index.html");
+        auth.signOut()
+            .then(() => window.location.href = "index.html")
+            .catch(err => alert("Logout failed: " + err.message));
     }
 
+    // Redirect if not logged in
     auth.onAuthStateChanged(user => {
         if (!user) window.location.href = "index.html";
     });
-
-    // ===== THEME TOGGLE =====
-    function applyTheme(theme) {
-        if (theme === "dark") {
-            document.body.classList.add("dark-mode");
-        } else {
-            document.body.classList.remove("dark-mode");
-        }
-    }
-
-    // Load saved theme
-    let savedTheme = localStorage.getItem("theme") || "light";
-    applyTheme(savedTheme);
-
-    // Button toggle
-    document.getElementById("theme-toggle").addEventListener("click", () => {
-        let currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
-        let newTheme = currentTheme === "dark" ? "light" : "dark";
-
-        applyTheme(newTheme);
-        localStorage.setItem("theme", newTheme); // Remember user choice
-    });
 </script>
 
+<!-- ===== NEWS BANNER ===== -->
 <div id="banner-container"></div>
-
 <script>
     fetch("banner.html")
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById("banner-container").innerHTML = data;
-        });
+        .then(res => res.text())
+        .then(html => document.getElementById("banner-container").innerHTML = html)
+        .catch(err => console.error("Banner load failed:", err));
 </script>
 
+<!-- ===== FOOTER & UPDATES ===== -->
 <script>
-    // Load footer HTML first
     fetch("footer.html")
-        .then(response => response.text())
-        .then(data => {
-            document.body.insertAdjacentHTML("beforeend", data);
-
-            // After footer loads, fetch live updates from Firestore
+        .then(res => res.text())
+        .then(html => {
+            document.body.insertAdjacentHTML("beforeend", html);
+            // Live updates from Firestore
             db.collection("updates")
                 .orderBy("timestamp", "desc")
                 .limit(5)
                 .onSnapshot(snapshot => {
                     const messages = snapshot.docs.map(doc => doc.data().message);
                     const marquee = document.getElementById("updates-marquee");
-                    marquee.textContent = messages.join("  ⚔️  ");
+                    if (marquee) marquee.textContent = messages.join(" ⚔️ ");
                 });
-        });
+        })
+        .catch(err => console.error("Footer load failed:", err));
 </script>
-
-
 </body>
 </html>

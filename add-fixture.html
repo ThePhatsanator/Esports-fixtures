@@ -1,140 +1,131 @@
 <!DOCTYPE html>
-<html>
-
-
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Sports Fixtures</title>
+  <title>E-Sports Fixtures | Page Title</title>
 
-
+  <!-- 🔗 CSS -->
   <link rel="stylesheet" href="css/style.css">
 
-
+  <!-- 🔥 Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-
+  <!-- ⚙️ Firebase Config + Theme Script -->
   <script src="js/Test1.js" defer></script>
-
-
-   <link rel="icon" href="images/logo.png" type="image/png">
 </head>
-
 
 <body>
 
 <div id="navbar-container"></div>
-
 <script>
-  // Load the navbar dynamically
   fetch("navbar.html")
-          .then(response => response.text())
-          .then(data => {
-            document.getElementById("navbar-container").innerHTML = data;
-          });
+          .then(res => res.text())
+          .then(html => document.getElementById("navbar-container").innerHTML = html)
+          .catch(err => console.error("Navbar load failed:", err));
 </script>
 
-<h2>Add Fixture</h2>
 
-<label for="teamA">Select Team A:</label>
-<select id="teamA"></select><br><br>
+<div class="container" style="text-align: right; margin-top: 10px;">
+  <button id="theme-toggle">🌙 Toggle Dark/Light</button>
+</div>
 
-<label for="teamB">Select Team B:</label>
-<select id="teamB"></select><br><br>
 
-<label for="matchDate">Match Date:</label>
-<input type="date" id="matchDate"><br><br>
+<main class="container">
+  <h2>Add Fixture</h2>
 
-<button onclick="addFixture()">Add Fixture</button>
+  <label for="teamA">Select Team A:</label>
+  <select id="teamA"></select><br><br>
 
-<p id="statusMessage"></p>
+  <label for="teamB">Select Team B:</label>
+  <select id="teamB"></select><br><br>
 
-<script>
-  // Load teams into dropdowns
-  db.collection("teams").get().then((querySnapshot) => {
-    const teamASelect = document.getElementById("teamA");
-    const teamBSelect = document.getElementById("teamB");
-    querySnapshot.forEach((doc) => {
-      const team = doc.data().teamName;
-      const id = doc.id;
+  <label for="matchDate">Match Date:</label>
+  <input type="date" id="matchDate"><br><br>
 
-      const optionA = document.createElement("option");
-      optionA.value = team;
-      optionA.text = team;
-      teamASelect.appendChild(optionA);
+  <button onclick="addFixture()">Add Fixture</button>
 
-      const optionB = document.createElement("option");
-      optionB.value = team;
-      optionB.text = team;
-      teamBSelect.appendChild(optionB);
+  <p id="statusMessage"></p>
+
+  <script>
+    // Load teams into dropdowns
+    db.collection("teams").get().then((querySnapshot) => {
+      const teamASelect = document.getElementById("teamA");
+      const teamBSelect = document.getElementById("teamB");
+      querySnapshot.forEach((doc) => {
+        const team = doc.data().teamName;
+        const id = doc.id;
+
+        const optionA = document.createElement("option");
+        optionA.value = team;
+        optionA.text = team;
+        teamASelect.appendChild(optionA);
+
+        const optionB = document.createElement("option");
+        optionB.value = team;
+        optionB.text = team;
+        teamBSelect.appendChild(optionB);
+      });
     });
-  });
 
-  function addFixture() {
-    const teamA = document.getElementById("teamA").value;
-    const teamB = document.getElementById("teamB").value;
-    const matchDate = document.getElementById("matchDate").value;
+    function addFixture() {
+      const teamA = document.getElementById("teamA").value;
+      const teamB = document.getElementById("teamB").value;
+      const matchDate = document.getElementById("matchDate").value;
 
-    if (teamA === teamB) {
-      alert("❌ Teams must be different.");
-      return;
+      if (teamA === teamB) {
+        alert("❌ Teams must be different.");
+        return;
+      }
+
+      db.collection("fixtures").add({
+        teamA: teamA,
+        teamB: teamB,
+        date: matchDate,
+        result: null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      })
+              .then(() => {
+                document.getElementById("statusMessage").innerText = "✅ Fixture added successfully!";
+              })
+              .catch((error) => {
+                document.getElementById("statusMessage").innerText = "❌ Error: " + error.message;
+                console.error(error);
+              });
     }
 
-    db.collection("fixtures").add({
-      teamA: teamA,
-      teamB: teamB,
-      date: matchDate,
-      result: null,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-            .then(() => {
-              document.getElementById("statusMessage").innerText = "✅ Fixture added successfully!";
-            })
-            .catch((error) => {
-              document.getElementById("statusMessage").innerText = "❌ Error: " + error.message;
-              console.error(error);
-            });
-  }
+  </script>
+</main>
 
-</script>
-<script>
-  function toggleTheme() {
-    document.body.classList.toggle("dark-mode");
-  }
-</script>
 
 <div id="banner-container"></div>
-
 <script>
   fetch("banner.html")
-          .then(response => response.text())
-          .then(data => {
-            document.getElementById("banner-container").innerHTML = data;
-          });
+          .then(res => res.text())
+          .then(html => document.getElementById("banner-container").innerHTML = html)
+          .catch(err => console.error("Banner load failed:", err));
 </script>
 
-<script>
-  // Load footer HTML first
-  fetch("footer.html")
-          .then(response => response.text())
-          .then(data => {
-            document.body.insertAdjacentHTML("beforeend", data);
 
-            // After footer loads, fetch live updates from Firestore
+<script>
+  fetch("footer.html")
+          .then(res => res.text())
+          .then(html => {
+            document.body.insertAdjacentHTML("beforeend", html);
+
+            // Fetch latest updates for the news banner
             db.collection("updates")
                     .orderBy("timestamp", "desc")
                     .limit(5)
                     .onSnapshot(snapshot => {
                       const messages = snapshot.docs.map(doc => doc.data().message);
                       const marquee = document.getElementById("updates-marquee");
-                      marquee.textContent = messages.join("  ⚔️  ");
+                      if (marquee) marquee.textContent = messages.join(" ⚔️ ");
                     });
-          });
+          })
+          .catch(err => console.error("Footer load failed:", err));
 </script>
-
-
 </body>
-
 </html>

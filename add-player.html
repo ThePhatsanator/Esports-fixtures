@@ -18,7 +18,7 @@
 </head>
 
 <body>
-<!-- ===== NAVBAR ===== -->
+
 <div id="navbar-container"></div>
 <script>
     fetch("navbar.html")
@@ -27,12 +27,12 @@
         .catch(err => console.error("Navbar load failed:", err));
 </script>
 
-<!-- ===== THEME TOGGLE BUTTON ===== -->
+
 <div class="container" style="text-align: right; margin-top: 10px;">
     <button id="theme-toggle">🌙 Toggle Dark/Light</button>
 </div>
 
-<!-- ===== MAIN CONTENT AREA ===== -->
+
 <main class="container">
     <h2>Add Player</h2>
 
@@ -84,7 +84,7 @@
     </script>
 </main>
 
-<!-- ===== BANNER ===== -->
+
 <div id="banner-container"></div>
 <script>
     fetch("banner.html")
@@ -93,7 +93,7 @@
         .catch(err => console.error("Banner load failed:", err));
 </script>
 
-<!-- ===== FOOTER + LIVE UPDATES ===== -->
+
 <script>
     fetch("footer.html")
         .then(res => res.text())

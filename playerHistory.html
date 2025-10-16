@@ -1,37 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Sports Fixtures</title>
+  <title>E-Sports Fixtures | Page Title</title>
 
-
+  <!-- 🔗 CSS -->
   <link rel="stylesheet" href="css/style.css">
 
-
+  <!-- 🔥 Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-
+  <!-- ⚙️ Firebase Config + Theme Script -->
   <script src="js/Test1.js" defer></script>
-
-<link rel="icon" href="images/logo.png" type="image/png">
 </head>
 
-
 <body>
+<!-- ===== NAVBAR ===== -->
 <div id="navbar-container"></div>
-
 <script>
-  // Load the navbar dynamically
-  fetch("/Esports-fixtures/navbar.html")
-          .then(response => response.text())
-          .then(data => {
-            document.getElementById("navbar-container").innerHTML = data;
-          });
+  fetch("navbar.html")
+          .then(res => res.text())
+          .then(html => document.getElementById("navbar-container").innerHTML = html)
+          .catch(err => console.error("Navbar load failed:", err));
 </script>
 
+<!-- ===== THEME TOGGLE BUTTON ===== -->
+<div class="container" style="text-align: right; margin-top: 10px;">
+  <button id="theme-toggle">🌙 Toggle Dark/Light</button>
+</div>
+
+<!-- ===== MAIN CONTENT AREA ===== -->
 <h2>Player Match History</h2>
 
 <label for="playerSelect">Select Player:</label>
@@ -123,41 +124,34 @@
             });
   }
 </script>
-<script>
-  function toggleTheme() {
-    document.body.classList.toggle("dark-mode");
-  }
-</script>
 
+<!-- ===== BANNER ===== -->
 <div id="banner-container"></div>
-
 <script>
   fetch("banner.html")
-          .then(response => response.text())
-          .then(data => {
-            document.getElementById("banner-container").innerHTML = data;
-          });
+          .then(res => res.text())
+          .then(html => document.getElementById("banner-container").innerHTML = html)
+          .catch(err => console.error("Banner load failed:", err));
 </script>
 
+<!-- ===== FOOTER + LIVE UPDATES ===== -->
 <script>
-  // Load footer HTML first
   fetch("footer.html")
-          .then(response => response.text())
-          .then(data => {
-            document.body.insertAdjacentHTML("beforeend", data);
+          .then(res => res.text())
+          .then(html => {
+            document.body.insertAdjacentHTML("beforeend", html);
 
-            // After footer loads, fetch live updates from Firestore
+            // Fetch latest updates for the news banner
             db.collection("updates")
                     .orderBy("timestamp", "desc")
                     .limit(5)
                     .onSnapshot(snapshot => {
                       const messages = snapshot.docs.map(doc => doc.data().message);
                       const marquee = document.getElementById("updates-marquee");
-                      marquee.textContent = messages.join("  ⚔️  ");
+                      if (marquee) marquee.textContent = messages.join(" ⚔️ ");
                     });
-          });
+          })
+          .catch(err => console.error("Footer load failed:", err));
 </script>
-
-
 </body>
 </html>

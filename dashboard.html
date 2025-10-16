@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Sports Fixtures | Dashboard</title>
+    <title>E-Sports Fixtures | Page Title</title>
 
     <!-- 🔗 CSS -->
     <link rel="stylesheet" href="css/style.css">
@@ -13,14 +13,13 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-    <!-- ⚙️ Your Firebase Config + Theme Handling -->
+    <!-- ⚙️ Firebase Config + Theme Script -->
     <script src="js/Test1.js" defer></script>
 </head>
 
 <body>
 <!-- ===== NAVBAR ===== -->
 <div id="navbar-container"></div>
-
 <script>
     fetch("navbar.html")
         .then(res => res.text())
@@ -28,12 +27,12 @@
         .catch(err => console.error("Navbar load failed:", err));
 </script>
 
-<!-- ===== THEME TOGGLE ===== -->
+<!-- ===== THEME TOGGLE BUTTON ===== -->
 <div class="container" style="text-align: right; margin-top: 10px;">
     <button id="theme-toggle">🌙 Toggle Dark/Light</button>
 </div>
 
-<!-- ===== MAIN CONTENT ===== -->
+
 <main class="container">
     <h2>Welcome to the Dashboard</h2>
     <p>Use the navigation above to manage teams, players, fixtures, and view results.</p>
@@ -55,7 +54,8 @@
     });
 </script>
 
-<!-- ===== NEWS BANNER ===== -->
+
+<!-- ===== BANNER ===== -->
 <div id="banner-container"></div>
 <script>
     fetch("banner.html")
@@ -64,13 +64,14 @@
         .catch(err => console.error("Banner load failed:", err));
 </script>
 
-<!-- ===== FOOTER & UPDATES ===== -->
+<!-- ===== FOOTER + LIVE UPDATES ===== -->
 <script>
     fetch("footer.html")
         .then(res => res.text())
         .then(html => {
             document.body.insertAdjacentHTML("beforeend", html);
-            // Live updates from Firestore
+
+            // Fetch latest updates for the news banner
             db.collection("updates")
                 .orderBy("timestamp", "desc")
                 .limit(5)

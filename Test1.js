@@ -1,3 +1,4 @@
+// ===== FIREBASE CONFIG =====
 const firebaseConfig = {
     apiKey: "AIzaSyD3vzNfjinpWOmibcI0SNcy_9Leb_98Uzw",
     authDomain: "testfixtures-a7abd.firebaseapp.com",
@@ -8,7 +9,13 @@ const firebaseConfig = {
     measurementId: "G-FDY4LLXBYM"
 };
 
-// ===== THEME TOGGLE =====
+// ===== FIREBASE INIT =====
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+
+// ===== THEME FUNCTIONS =====
 function applyTheme(theme) {
     if (theme === "dark") {
         document.body.classList.add("dark-mode");
@@ -19,29 +26,40 @@ function applyTheme(theme) {
     }
 }
 
-// Run after DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-    // Load saved theme
-    let savedTheme = localStorage.getItem("theme") || "light";
+function attachThemeToggle() {
+    const toggleBtn = document.getElementById("theme-toggle");
+    if (!toggleBtn) {
+        console.warn("⚠️ Theme toggle button not found (navbar may not be loaded yet)");
+        return;
+    }
+
+    // Apply saved theme
+    const savedTheme = localStorage.getItem("theme") || "light";
     applyTheme(savedTheme);
 
-    // Hook up toggle button if it exists
-    const toggleBtn = document.getElementById("theme-toggle");
-    if (toggleBtn) {
-        toggleBtn.addEventListener("click", () => {
-            let currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
-            let newTheme = currentTheme === "dark" ? "light" : "dark";
+    // Handle toggle
+    toggleBtn.addEventListener("click", () => {
+        let currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
+        let newTheme = currentTheme === "dark" ? "light" : "dark";
+        applyTheme(newTheme);
+        localStorage.setItem("theme", newTheme);
+        console.log("🔄 Theme changed to:", newTheme);
+    });
+}
 
-            applyTheme(newTheme);
-            localStorage.setItem("theme", newTheme); // Save choice
-            console.log("🔄 Theme changed to:", newTheme);
-        });
-    } else {
-        console.warn("⚠️ Theme toggle button not found on this page");
-    }
+
+// ===== NAVBAR LOADER =====
+document.addEventListener("DOMContentLoaded", () => {
+    // Load navbar dynamically
+    fetch("navbar.html")
+        .then(response => response.text())
+        .then(data => {
+            document.body.insertAdjacentHTML("afterbegin", data);
+            attachThemeToggle(); // ✅ Ensure the button now exists before attaching logic
+        })
+        .catch(err => console.error("❌ Navbar load failed:", err));
+
+    // Load saved theme (in case navbar fails)
+    const savedTheme = localStorage.getItem("theme") || "light";
+    applyTheme(savedTheme);
 });
-
-// ===== FIREBASE INIT =====
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();

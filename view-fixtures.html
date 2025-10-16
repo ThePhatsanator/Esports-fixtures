@@ -99,12 +99,24 @@
 
 
 <script>
+  // Load footer HTML first
   fetch("footer.html")
           .then(response => response.text())
           .then(data => {
             document.body.insertAdjacentHTML("beforeend", data);
+
+            // After footer loads, fetch live updates from Firestore
+            db.collection("updates")
+                    .orderBy("timestamp", "desc")
+                    .limit(5)
+                    .onSnapshot(snapshot => {
+                      const messages = snapshot.docs.map(doc => doc.data().message);
+                      const marquee = document.getElementById("updates-marquee");
+                      marquee.textContent = messages.join("  ⚔️  ");
+                    });
           });
 </script>
+
 
 </body>
 </html>

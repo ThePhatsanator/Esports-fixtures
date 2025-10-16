@@ -227,4 +227,8 @@ body.dark-mode .news-banner {
     background-color: #111;
     color: #ddd;
 }
+.navbar {
+    margin-bottom: 20px;
+}
+
 

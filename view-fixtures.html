@@ -1,123 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Sports Fixtures | Page Title</title>
-
-  <!-- 🔗 CSS -->
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>E-Sports Fixtures | View Fixtures</title>
   <link rel="stylesheet" href="css/style.css">
-
-  <!-- 🔥 Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-  <!-- ⚙️ Firebase Config + Theme Script -->
-  <script src="js/Test1.js" defer></script>
-  <script src="js/firebase-loader.js" defer></script>
-
-
 </head>
-
 <body>
-<!-- ===== NAVBAR ===== -->
 <div id="navbar-container"></div>
+<script>fetch("navbar.html").then(r=>r.text()).then(h=>document.getElementById("navbar-container").innerHTML=h);</script>
+
+<div class="container" style="text-align:right; margin-top:10px;"><button id="theme-toggle">🌙 Toggle Dark/Light</button></div>
+
+<main class="container">
+  <h2>All Fixtures</h2>
+  <table border="1" cellpadding="10">
+    <thead><tr><th>Team A</th><th>Team B</th><th>Date</th><th>Result</th></tr></thead>
+    <tbody id="fixtureTable"><tr><td colspan="4">Loading fixtures...</td></tr></tbody>
+  </table>
+</main>
+
+<div id="banner-container"></div>
+<script>fetch("banner.html").then(r=>r.text()).then(html=>document.getElementById("banner-container").innerHTML=html);</script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script src="js/firebase-loader.js"></script>
+
+<!-- fallback waiter -->
 <script>
-  fetch("navbar.html")
-          .then(res => res.text())
-          .then(html => document.getElementById("navbar-container").innerHTML = html)
-          .catch(err => console.error("Navbar load failed:", err));
-</script>
-
-<!-- ===== THEME TOGGLE BUTTON ===== -->
-<div class="container" style="text-align: right; margin-top: 10px;">
-  <button id="theme-toggle">🌙 Toggle Dark/Light</button>
-</div>
-
-<!-- ===== MAIN CONTENT AREA ===== -->
-
-<h2>All Fixtures</h2>
-
-<table border="1" cellpadding="10">
-  <thead>
-  <tr>
-    <th>Team A</th>
-    <th>Team B</th>
-    <th>Date</th>
-    <th>Result</th>
-  </tr>
-  </thead>
-  <tbody id="fixtureTable">
-  <tr><td colspan="4">Loading fixtures...</td></tr>
-  </tbody>
-</table>
-
-<script>
-  const table = document.getElementById("fixtureTable");
-
-  db.collection("fixtures").orderBy("date").get()
-          .then((querySnapshot) => {
-            table.innerHTML = "";
-
-            if (querySnapshot.empty) {
-              table.innerHTML = "<tr><td colspan='4'>No fixtures available.</td></tr>";
-            }
-
-            querySnapshot.forEach((doc) => {
-              const data = doc.data();
-              const row = document.createElement("tr");
-
-              const date = data.date ? new Date(data.date).toLocaleDateString() : "Not set";
-              const result = data.result || "Pending";
-
-              row.innerHTML = `
-            <td>${data.teamA}</td>
-            <td>${data.teamB}</td>
-            <td>${date}</td>
-            <td>${result}</td>
-          `;
-              table.appendChild(row);
-            });
-          })
-          .catch((error) => {
-            console.error("Error loading fixtures: ", error);
-            table.innerHTML = "<tr><td colspan='4'>Error loading fixtures.</td></tr>";
-          });
-</script>
-<script>
-  function toggleTheme() {
-    document.body.classList.toggle("dark-mode");
+  if (!window.firebaseReady) {
+    console.warn("⚠️ firebase-init.js not loaded yet — waiting for Firebase to initialize...");
+    window.firebaseReady = new Promise((resolve) => {
+      const checkInterval = setInterval(() => {
+        if (window.firebase && firebase.apps && firebase.apps.length > 0 && firebase.auth) {
+          clearInterval(checkInterval);
+          window.db = window.db || firebase.firestore();
+          window.auth = window.auth || firebase.auth();
+          console.log("✅ Firebase fallback initialization complete (view-fixtures)");
+          resolve();
+        }
+      }, 100);
+    });
   }
 </script>
 
-<!-- ===== BANNER ===== -->
-<div id="banner-container"></div>
 <script>
-  fetch("banner.html")
-          .then(res => res.text())
-          .then(html => document.getElementById("banner-container").innerHTML = html)
-          .catch(err => console.error("Banner load failed:", err));
+  window.firebaseReady.then(()=>{
+    const table = document.getElementById("fixtureTable");
+    db.collection("fixtures").orderBy("date").get()
+            .then(snapshot=>{
+              table.innerHTML = "";
+              if (snapshot.empty) {
+                table.innerHTML = "<tr><td colspan='4'>No fixtures available.</td></tr>";
+                return;
+              }
+              snapshot.forEach(doc=>{
+                const data = doc.data();
+                const date = data.date ? new Date(data.date).toLocaleDateString() : "Not set";
+                const result = data.result || "Pending";
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>${data.teamA}</td><td>${data.teamB}</td><td>${date}</td><td>${result}</td>`;
+                table.appendChild(row);
+              });
+            })
+            .catch(err=>{
+              console.error("Error loading fixtures:", err);
+              table.innerHTML = "<tr><td colspan='4'>Error loading fixtures.</td></tr>";
+            });
+  });
 </script>
 
-<!-- ===== FOOTER + LIVE UPDATES ===== -->
+<!-- footer -->
 <script>
-  fetch("footer.html")
-          .then(res => res.text())
-          .then(html => {
-            document.body.insertAdjacentHTML("beforeend", html);
-
-            // Fetch latest updates for the news banner
-            db.collection("updates")
-                    .orderBy("timestamp", "desc")
-                    .limit(5)
-                    .onSnapshot(snapshot => {
-                      const messages = snapshot.docs.map(doc => doc.data().message);
-                      const marquee = document.getElementById("updates-marquee");
-                      if (marquee) marquee.textContent = messages.join(" ⚔️ ");
-                    });
-          })
-          .catch(err => console.error("Footer load failed:", err));
+  fetch("footer.html").then(r=>r.text()).then(html=>{
+    document.body.insertAdjacentHTML("beforeend", html);
+    window.firebaseReady.then(()=> {
+      db.collection("updates").orderBy("timestamp","desc").limit(5).onSnapshot(snap=>{
+        const messages = snap.docs.map(d=>d.data().message);
+        const marquee = document.getElementById("updates-marquee");
+        if (marquee) marquee.textContent = messages.join(" ⚔️ ");
+      });
+    });
+  });
 </script>
 </body>
 </html>

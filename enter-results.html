@@ -1,26 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Sports Fixtures | Page Title</title>
-
-    <!-- 🔗 CSS -->
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>E-Sports Fixtures | Enter Results</title>
     <link rel="stylesheet" href="css/style.css">
-
-    <!-- 🔥 Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-    <!-- ⚙️ Firebase Config + Theme Script -->
-    <script src="js/Test1.js" defer></script>
-    <script src="js/firebase-loader.js" defer></script>
-
 </head>
-
 <body>
-<!-- ===== NAVBAR ===== -->
 <div id="navbar-container"></div>
 <script>
     fetch("navbar.html")
@@ -29,126 +15,28 @@
         .catch(err => console.error("Navbar load failed:", err));
 </script>
 
-<!-- ===== THEME TOGGLE BUTTON ===== -->
-<div class="container" style="text-align: right; margin-top: 10px;">
+<div class="container" style="text-align: right; margin-top:10px;">
     <button id="theme-toggle">🌙 Toggle Dark/Light</button>
 </div>
 
-<!-- ===== MAIN CONTENT AREA ===== -->
-<h2>Enter Match Result</h2>
+<main class="container">
+    <h2>Enter Match Result</h2>
 
-<label for="fixtureSelect">Select Fixture:</label>
-<select id="fixtureSelect"></select><br><br>
+    <label for="fixtureSelect">Select Fixture:</label>
+    <select id="fixtureSelect"></select><br><br>
 
-<label for="winner">Winning Team:</label>
-<select id="winner">
-    <option disabled selected>Select winning team</option>
-</select><br><br>
+    <label for="winner">Winning Team:</label>
+    <select id="winner">
+        <option disabled selected>Select winning team</option>
+    </select><br><br>
 
-<button onclick="loadPlayers()">Load Players</button>
+    <button id="loadPlayersBtn">Load Players</button>
 
-<div id="playerStatsSection" style="margin-top:20px;"></div>
+    <div id="playerStatsSection" style="margin-top:20px;"></div>
 
-<button onclick="submitResults()">Submit Results</button>
+    <button id="submitResultsBtn">Submit Results</button>
+</main>
 
-<script>
-    let selectedFixtureId = "";
-    let players = [];
-
-    // Load fixtures
-    db.collection("fixtures").get().then((querySnapshot) => {
-        const fixtureSelect = document.getElementById("fixtureSelect");
-        fixtureSelect.innerHTML = "";
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const option = document.createElement("option");
-            option.value = doc.id;
-            option.text = `${data.teamA} vs ${data.teamB} (${data.date || "No Date"})`;
-            fixtureSelect.appendChild(option);
-        });
-    });
-
-    function loadPlayers() {
-        selectedFixtureId = document.getElementById("fixtureSelect").value;
-        if (!selectedFixtureId) return alert("Please select a fixture");
-
-        const fixtureRef = db.collection("fixtures").doc(selectedFixtureId);
-        fixtureRef.get().then((doc) => {
-            const fixture = doc.data();
-            const teams = [fixture.teamA, fixture.teamB];
-
-            const winnerSelect = document.getElementById("winner");
-            winnerSelect.innerHTML = `
-          <option disabled selected>Select winning team</option>
-          <option value="${fixture.teamA}">${fixture.teamA}</option>
-          <option value="${fixture.teamB}">${fixture.teamB}</option>
-        `;
-
-
-            db.collection("players")
-                .where("teamId", "in", teams)
-                .get()
-                .then((querySnapshot) => {
-                    players = [];
-                    const section = document.getElementById("playerStatsSection");
-                    section.innerHTML = "<h3>Player Stats</h3>";
-
-                    querySnapshot.forEach((doc) => {
-                        const player = doc.data();
-                        player.id = doc.id;
-                        players.push(player);
-
-                        section.innerHTML += `
-                <div>
-                  <strong>${player.playerName} (${player.gamerTag}) - ${player.role}</strong><br>
-                  Kills: <input type="number" id="kills-${player.id}" value="0" />
-                  Deaths: <input type="number" id="deaths-${player.id}" value="1" />
-                  Assists: <input type="number" id="assists-${player.id}" value="0" />
-                </div><br>
-              `;
-                    });
-                });
-        });
-    }
-
-    function submitResults() {
-        const winner = document.getElementById("winner").value;
-        if (!winner) return alert("Enter winning team name.");
-
-        // Update the fixture result
-        db.collection("fixtures").doc(selectedFixtureId).update({
-            result: winner
-        });
-
-        // Save each player's KDA
-        players.forEach((player) => {
-            const kills = parseInt(document.getElementById(`kills-${player.id}`).value) || 0;
-            const deaths = parseInt(document.getElementById(`deaths-${player.id}`).value) || 1;
-            const assists = parseInt(document.getElementById(`assists-${player.id}`).value) || 0;
-
-            const kda = ((kills + assists) / deaths).toFixed(2);
-
-            db.collection("matchStats").add({
-                fixtureId: selectedFixtureId,
-                playerId: player.id,
-                kills: kills,
-                deaths: deaths,
-                assists: assists,
-                kda: parseFloat(kda),
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        });
-
-        alert("✅ Match result and player stats submitted!");
-    }
-</script>
-<script>
-    function toggleTheme() {
-        document.body.classList.toggle("dark-mode");
-    }
-</script>
-
-<!-- ===== BANNER ===== -->
 <div id="banner-container"></div>
 <script>
     fetch("banner.html")
@@ -157,22 +45,141 @@
         .catch(err => console.error("Banner load failed:", err));
 </script>
 
-<!-- ===== FOOTER + LIVE UPDATES ===== -->
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script src="js/firebase-loader.js"></script>
+
+<!-- fallback waiter -->
+<script>
+    if (!window.firebaseReady) {
+        console.warn("⚠️ firebase-init.js not loaded yet — waiting for Firebase to initialize...");
+        window.firebaseReady = new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+                if (window.firebase && firebase.apps && firebase.apps.length > 0 && firebase.auth) {
+                    clearInterval(checkInterval);
+                    window.db = window.db || firebase.firestore();
+                    window.auth = window.auth || firebase.auth();
+                    console.log("✅ Firebase fallback initialization complete (enter-results)");
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+</script>
+
+<script>
+    window.firebaseReady.then(() => {
+        console.log("🔥 Firebase ready — enter-results page");
+        let selectedFixtureId = "";
+        let players = [];
+
+        // Load fixtures
+        db.collection("fixtures").get().then((querySnapshot) => {
+            const fixtureSelect = document.getElementById("fixtureSelect");
+            fixtureSelect.innerHTML = "<option disabled selected>Select fixture</option>";
+            if (querySnapshot.empty) {
+                fixtureSelect.innerHTML = "<option disabled>No fixtures</option>";
+                return;
+            }
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const option = document.createElement("option");
+                option.value = doc.id;
+                option.text = `${data.teamA} vs ${data.teamB} (${data.date || "No Date"})`;
+                fixtureSelect.appendChild(option);
+            });
+        });
+
+        document.getElementById("loadPlayersBtn").addEventListener("click", () => {
+            selectedFixtureId = document.getElementById("fixtureSelect").value;
+            if (!selectedFixtureId) return alert("Please select a fixture");
+
+            db.collection("fixtures").doc(selectedFixtureId).get().then((doc) => {
+                const fixture = doc.data();
+                const winnerSelect = document.getElementById("winner");
+                winnerSelect.innerHTML = `
+            <option disabled selected>Select winning team</option>
+            <option value="${fixture.teamA}">${fixture.teamA}</option>
+            <option value="${fixture.teamB}">${fixture.teamB}</option>
+          `;
+
+                db.collection("players").where("teamId", "in", [fixture.teamA, fixture.teamB])
+                    .get()
+                    .then((querySnapshot) => {
+                        players = [];
+                        const section = document.getElementById("playerStatsSection");
+                        section.innerHTML = "<h3>Player Stats</h3>";
+
+                        if (querySnapshot.empty) {
+                            section.innerHTML += "<p>No players found for these teams.</p>";
+                            return;
+                        }
+
+                        querySnapshot.forEach((pdoc) => {
+                            const player = pdoc.data();
+                            player.id = pdoc.id;
+                            players.push(player);
+
+                            section.innerHTML += `
+                  <div>
+                    <strong>${player.playerName} (${player.gamerTag}) - ${player.role}</strong><br>
+                    Kills: <input type="number" id="kills-${player.id}" value="0" />
+                    Deaths: <input type="number" id="deaths-${player.id}" value="1" />
+                    Assists: <input type="number" id="assists-${player.id}" value="0" />
+                  </div><br>
+                `;
+                        });
+                    });
+            });
+        });
+
+        document.getElementById("submitResultsBtn").addEventListener("click", () => {
+            const winner = document.getElementById("winner").value;
+            if (!winner) return alert("Enter winning team name.");
+
+            // Update the fixture result
+            db.collection("fixtures").doc(selectedFixtureId).update({ result: winner });
+
+            // Save each player's KDA
+            players.forEach((player) => {
+                const kills = parseInt(document.getElementById(`kills-${player.id}`).value) || 0;
+                const deaths = parseInt(document.getElementById(`deaths-${player.id}`).value) || 1;
+                const assists = parseInt(document.getElementById(`assists-${player.id}`).value) || 0;
+                const kda = ((kills + assists) / deaths).toFixed(2);
+
+                db.collection("matchStats").add({
+                    fixtureId: selectedFixtureId,
+                    playerId: player.id,
+                    kills: kills,
+                    deaths: deaths,
+                    assists: assists,
+                    kda: parseFloat(kda),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            alert("✅ Match result and player stats submitted!");
+        });
+    });
+</script>
+
+<!-- footer -->
 <script>
     fetch("footer.html")
         .then(res => res.text())
         .then(html => {
             document.body.insertAdjacentHTML("beforeend", html);
-
-            // Fetch latest updates for the news banner
-            db.collection("updates")
-                .orderBy("timestamp", "desc")
-                .limit(5)
-                .onSnapshot(snapshot => {
-                    const messages = snapshot.docs.map(doc => doc.data().message);
-                    const marquee = document.getElementById("updates-marquee");
-                    if (marquee) marquee.textContent = messages.join(" ⚔️ ");
-                });
+            window.firebaseReady.then(() => {
+                db.collection("updates").orderBy("timestamp", "desc").limit(5)
+                    .onSnapshot(snapshot => {
+                        const messages = snapshot.docs.map(d => d.data().message);
+                        const marquee = document.getElementById("updates-marquee");
+                        if (marquee) marquee.textContent = messages.join(" ⚔️ ");
+                    });
+            });
         })
         .catch(err => console.error("Footer load failed:", err));
 </script>

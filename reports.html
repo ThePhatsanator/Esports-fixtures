@@ -31,6 +31,12 @@
   </section>
 
   <section style="margin-top:2rem;">
+    <div class="export-buttons" style="margin-bottom: 20px;">
+      <button id="exportCSV">📄 Export as CSV</button>
+      <button id="exportExcel">📊 Export as Excel</button>
+      <button id="exportPDF">🧾 Export as PDF</button>
+    </div>
+
     <h3>Average KDA per Player</h3>
     <canvas id="kdaChart"></canvas>
   </section>
@@ -207,5 +213,52 @@
     text-align: center;
   }
 </style>
+<!-- FileSaver and SheetJS for CSV/XLSX -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+  document.getElementById("exportCSV").addEventListener("click", () => exportTable("csv"));
+  document.getElementById("exportExcel").addEventListener("click", () => exportTable("xlsx"));
+  document.getElementById("exportPDF").addEventListener("click", () => exportTable("pdf"));
+
+  function exportTable(format) {
+    const table = document.querySelector("table");
+    const rows = Array.from(table.querySelectorAll("tr")).map(tr =>
+            Array.from(tr.querySelectorAll("th, td")).map(td => td.innerText.trim())
+    );
+
+    if (format === "csv") {
+      const csvContent = rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      saveAs(blob, "team_leaderboard.csv");
+    }
+
+    else if (format === "xlsx") {
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Leaderboard");
+      XLSX.writeFile(wb, "team_leaderboard.xlsx");
+    }
+
+    else if (format === "pdf") {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Team Leaderboard Report", 14, 15);
+      doc.autoTable({
+        startY: 20,
+        head: [rows[0]],
+        body: rows.slice(1),
+        theme: "grid",
+      });
+      doc.save("team_leaderboard.pdf");
+    }
+  }
+</script>
+
 </body>
 </html>

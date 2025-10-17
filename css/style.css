@@ -231,4 +231,25 @@ body.dark-mode .news-banner {
     margin-bottom: 20px;
 }
 
+<style>
+ .export-buttons button {
+     margin-right: 10px;
+     padding: 8px 16px;
+     border: none;
+     background: #0078d7;
+     color: white;
+     cursor: pointer;
+     border-radius: 6px;
+ }
+.export-buttons button:hover {
+    background: #005fa3;
+}
+body.dark-mode .export-buttons button {
+    background: #444;
+    color: #ddd;
+}
+body.dark-mode .export-buttons button:hover {
+    background: #666;
+}
+</style>
 

@@ -16,7 +16,7 @@ body::before {
     height: 100%;
     background:
             linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)),
-            url('../images/stadium-bg.jpg') no-repeat center center / cover;
+            url('../images/compet_esport.jpg') no-repeat center center / cover;
     filter: blur(6px);
     z-index: -1;
     transform: scale(1.1);

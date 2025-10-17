@@ -1,26 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Sports Fixtures | Page Title</title>
-
-    <!-- 🔗 CSS -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>E-Sports Fixtures | Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
-
-    <!-- 🔥 Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-    <!-- ⚙️ Firebase Config + Theme Script -->
-    <script src="js/Test1.js" defer></script>
-    <script src="js/firebase-loader.js" defer></script>
-
 </head>
-
 <body>
-<!-- ===== NAVBAR ===== -->
 <div id="navbar-container"></div>
 <script>
     fetch("navbar.html")
@@ -29,35 +15,16 @@
         .catch(err => console.error("Navbar load failed:", err));
 </script>
 
-<!-- ===== THEME TOGGLE BUTTON ===== -->
-<div class="container" style="text-align: right; margin-top: 10px;">
+<div class="container" style="text-align: right; margin-top:10px;">
     <button id="theme-toggle">🌙 Toggle Dark/Light</button>
 </div>
-
 
 <main class="container">
     <h2>Welcome to the Dashboard</h2>
     <p>Use the navigation above to manage teams, players, fixtures, and view results.</p>
-
-    <button onclick="logout()">Logout</button>
+    <button id="logoutBtn">Logout</button>
 </main>
 
-<script>
-    // Ensure logout works globally
-    function logout() {
-        auth.signOut()
-            .then(() => window.location.href = "index.html")
-            .catch(err => alert("Logout failed: " + err.message));
-    }
-
-    // Redirect if not logged in
-    auth.onAuthStateChanged(user => {
-        if (!user) window.location.href = "index.html";
-    });
-</script>
-
-
-<!-- ===== BANNER ===== -->
 <div id="banner-container"></div>
 <script>
     fetch("banner.html")
@@ -66,22 +33,64 @@
         .catch(err => console.error("Banner load failed:", err));
 </script>
 
-<!-- ===== FOOTER + LIVE UPDATES ===== -->
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script src="js/firebase-loader.js"></script>
+
+<!-- fallback waiter -->
+<script>
+    if (!window.firebaseReady) {
+        console.warn("⚠️ firebase-init.js not loaded yet — waiting for Firebase to initialize...");
+        window.firebaseReady = new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+                if (window.firebase && firebase.apps && firebase.apps.length > 0 && firebase.auth) {
+                    clearInterval(checkInterval);
+                    window.db = window.db || firebase.firestore();
+                    window.auth = window.auth || firebase.auth();
+                    console.log("✅ Firebase fallback initialization complete (dashboard)");
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+</script>
+
+<script>
+    window.firebaseReady.then(() => {
+        console.log("🔥 Firebase ready — dashboard page");
+
+        function logout() {
+            auth.signOut()
+                .then(() => window.location.href = "index.html")
+                .catch(err => alert("Logout failed: " + err.message));
+        }
+        window.logout = logout;
+
+        document.getElementById("logoutBtn").addEventListener("click", logout);
+
+        // Redirect if not logged in
+        auth.onAuthStateChanged(user => {
+            if (!user) window.location.href = "index.html";
+        });
+    });
+</script>
+
 <script>
     fetch("footer.html")
         .then(res => res.text())
         .then(html => {
             document.body.insertAdjacentHTML("beforeend", html);
-
-            // Fetch latest updates for the news banner
-            db.collection("updates")
-                .orderBy("timestamp", "desc")
-                .limit(5)
-                .onSnapshot(snapshot => {
-                    const messages = snapshot.docs.map(doc => doc.data().message);
-                    const marquee = document.getElementById("updates-marquee");
-                    if (marquee) marquee.textContent = messages.join(" ⚔️ ");
-                });
+            window.firebaseReady.then(() => {
+                db.collection("updates").orderBy("timestamp", "desc").limit(5)
+                    .onSnapshot(snapshot => {
+                        const messages = snapshot.docs.map(d => d.data().message);
+                        const marquee = document.getElementById("updates-marquee");
+                        if (marquee) marquee.textContent = messages.join(" ⚔️ ");
+                    });
+            });
         })
         .catch(err => console.error("Footer load failed:", err));
 </script>

@@ -14,6 +14,8 @@
   <!-- loader first, then Test1 -->
 
   <script src="js/firebase-loader.js" defer></script>
+
+
   <script src="js/Test1.js" defer></script>
 
 
@@ -55,32 +57,23 @@
     const statusMsg = document.getElementById("statusMessage");
 
     // Load teams into dropdowns
-    db.collection("teams").get()
-            .then((querySnapshot) => {
-              teamASelect.innerHTML = "<option disabled selected>Select Team A</option>";
-              teamBSelect.innerHTML = "<option disabled selected>Select Team B</option>";
-              if (querySnapshot.empty) {
-                teamASelect.innerHTML = "<option disabled>No teams found</option>";
-                teamBSelect.innerHTML = "<option disabled>No teams found</option>";
-                return;
-              }
-              querySnapshot.forEach((doc) => {
-                const team = doc.data().teamName || doc.data().name || "(Unnamed)";
-                const optionA = document.createElement("option");
-                optionA.value = team;
-                optionA.text = team;
-                teamASelect.appendChild(optionA);
+    db.collection("teams").get().then((querySnapshot) => {
+      teamASelect.innerHTML = "<option disabled selected>Select Team A</option>";
+      teamBSelect.innerHTML = "<option disabled selected>Select Team B</option>";
 
-                const optionB = document.createElement("option");
-                optionB.value = team;
-                optionB.text = team;
-                teamBSelect.appendChild(optionB);
-              });
-            })
-            .catch(err => {
-              console.error("Error loading teams:", err);
-              statusMsg.textContent = "Error loading teams.";
-            });
+      querySnapshot.forEach((doc) => {
+        const team = doc.data().teamName || doc.data().name || "(Unnamed)";
+        const optionA = document.createElement("option");
+        optionA.value = team;
+        optionA.text = team;
+        teamASelect.appendChild(optionA);
+
+        const optionB = document.createElement("option");
+        optionB.value = team;
+        optionB.text = team;
+        teamBSelect.appendChild(optionB);
+      });
+    });
 
     // Add fixture handler
     document.getElementById("addFixtureBtn").addEventListener("click", () => {
@@ -98,15 +91,13 @@
       }
 
       db.collection("fixtures").add({
-        teamA: teamA,
-        teamB: teamB,
+        teamA,
+        teamB,
         date: matchDate,
         result: null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       })
-              .then(() => {
-                statusMsg.textContent = "✅ Fixture added successfully!";
-              })
+              .then(() => statusMsg.textContent = "✅ Fixture added successfully!")
               .catch((error) => {
                 statusMsg.textContent = "❌ Error: " + error.message;
                 console.error(error);
@@ -114,6 +105,7 @@
     });
   });
 </script>
+
 
 <div id="banner-container"></div>
 <script>

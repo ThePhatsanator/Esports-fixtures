@@ -7,21 +7,40 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<!-- Navbar -->
 <div id="navbar-container"></div>
-<script>fetch("navbar.html").then(r=>r.text()).then(h=>document.getElementById("navbar-container").innerHTML=h);</script>
+<script>
+  fetch("navbar.html")
+          .then(r => r.text())
+          .then(html => document.getElementById("navbar-container").innerHTML = html);
+</script>
 
-<div class="container" style="text-align:right; margin-top:10px;"><button id="theme-toggle">🌙 Toggle Dark/Light</button></div>
+<div class="container" style="text-align:right; margin-top:10px;">
+  <button id="theme-toggle">🌙 Toggle Dark/Light</button>
+</div>
 
 <main class="container">
-  <h2>Team Leaderboard (By Wins)</h2>
-  <table border="1" cellpadding="10">
-    <thead><tr><th>Rank</th><th>Team Name</th><th>Wins</th></tr></thead>
-    <tbody id="leaderboardBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+  <h2>🏆 Team Leaderboard (By Wins)</h2>
+  <table border="1" cellpadding="10" class="leaderboard-table">
+    <thead>
+    <tr>
+      <th>Rank</th>
+      <th>Team Name</th>
+      <th>Wins</th>
+    </tr>
+    </thead>
+    <tbody id="leaderboardBody">
+    <tr><td colspan="3">Loading...</td></tr>
+    </tbody>
   </table>
 </main>
 
 <div id="banner-container"></div>
-<script>fetch("banner.html").then(r=>r.text()).then(html=>document.getElementById("banner-container").innerHTML=html);</script>
+<script>
+  fetch("banner.html")
+          .then(r => r.text())
+          .then(html => document.getElementById("banner-container").innerHTML = html);
+</script>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -29,10 +48,9 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script src="js/firebase-loader.js"></script>
-
 <script src="js/theme-toggle.js"></script>
 
-<!-- fallback waiter -->
+<!-- Firebase Fallback Waiter -->
 <script>
   if (!window.firebaseReady) {
     console.warn("⚠️ firebase-init.js not loaded yet — waiting for Firebase to initialize...");
@@ -50,49 +68,76 @@
   }
 </script>
 
+<!-- Live-Updating Leaderboard -->
 <script>
-  window.firebaseReady.then(()=>{
+  window.firebaseReady.then(() => {
     const leaderboardBody = document.getElementById("leaderboardBody");
-    db.collection("fixtures").where("result", "!=", "").get()
-            .then(querySnapshot => {
-              const winCounts = {};
-              querySnapshot.forEach(doc => {
-                const data = doc.data();
-                const winner = data.result;
-                if (winner) winCounts[winner] = (winCounts[winner] || 0) + 1;
-              });
 
-              const sortedTeams = Object.entries(winCounts).map(([team,wins])=>({team,wins})).sort((a,b)=>b.wins-a.wins);
-              leaderboardBody.innerHTML = "";
-              if (sortedTeams.length === 0) {
-                leaderboardBody.innerHTML = "<tr><td colspan='3'>No results available yet.</td></tr>";
-                return;
-              }
-              sortedTeams.forEach((entry,i)=>{
-                const row = document.createElement("tr");
-                row.innerHTML = `<td>${i+1}</td><td>${entry.team}</td><td>${entry.wins}</td>`;
-                leaderboardBody.appendChild(row);
-              });
-            })
-            .catch(err => {
+    function renderLeaderboard(snapshot) {
+      const winCounts = {};
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const winner = data.result?.trim();
+        if (winner) winCounts[winner] = (winCounts[winner] || 0) + 1;
+      });
+
+      const sortedTeams = Object.entries(winCounts)
+              .map(([team, wins]) => ({ team, wins }))
+              .sort((a, b) => b.wins - a.wins);
+
+      leaderboardBody.innerHTML = "";
+      if (sortedTeams.length === 0) {
+        leaderboardBody.innerHTML = "<tr><td colspan='3'>No results available yet.</td></tr>";
+        return;
+      }
+
+      sortedTeams.forEach((entry, i) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${entry.team}</td>
+            <td>${entry.wins}</td>
+          `;
+        leaderboardBody.appendChild(row);
+      });
+    }
+
+    // 🔄 Real-time updates using onSnapshot
+    db.collection("fixtures")
+            .where("result", ">", "")
+            .onSnapshot(renderLeaderboard, err => {
               console.error("Error loading leaderboard:", err);
               leaderboardBody.innerHTML = "<tr><td colspan='3'>Error loading leaderboard.</td></tr>";
             });
   });
 </script>
 
-<!-- footer -->
+<!-- Footer -->
 <script>
-  fetch("footer.html").then(r=>r.text()).then(html=>{
+  fetch("footer.html").then(r => r.text()).then(html => {
     document.body.insertAdjacentHTML("beforeend", html);
-    window.firebaseReady.then(()=> {
-      db.collection("updates").orderBy("timestamp","desc").limit(5).onSnapshot(snap=>{
-        const messages = snap.docs.map(d=>d.data().message);
+    window.firebaseReady.then(() => {
+      db.collection("updates").orderBy("timestamp","desc").limit(5).onSnapshot(snap => {
+        const messages = snap.docs.map(d => d.data().message);
         const marquee = document.getElementById("updates-marquee");
         if (marquee) marquee.textContent = messages.join(" ⚔️ ");
       });
     });
   });
 </script>
+
+<!-- Optional: Small CSS tweak for dark mode -->
+<style>
+  .leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: center;
+  }
+  body.dark-mode .leaderboard-table {
+    border-color: #666;
+    background-color: #222;
+    color: #ddd;
+  }
+</style>
 </body>
 </html>

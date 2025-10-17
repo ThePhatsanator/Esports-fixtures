@@ -1,26 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Sports Fixtures | Page Title</title>
-
-    <!-- 🔗 CSS -->
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>E-Sports Fixtures | Login</title>
     <link rel="stylesheet" href="css/style.css">
-
-    <!-- 🔥 Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-    <!-- ⚙️ Firebase Config + Theme Script -->
-    <script src="js/Test1.js" defer></script>
-    <script src="js/firebase-loader.js" defer></script>
-
 </head>
-
 <body>
-<!-- ===== NAVBAR ===== -->
 <div id="navbar-container"></div>
 <script>
     fetch("navbar.html")
@@ -29,30 +15,18 @@
         .catch(err => console.error("Navbar load failed:", err));
 </script>
 
-<!-- ===== THEME TOGGLE BUTTON ===== -->
-<div class="container" style="text-align: right; margin-top: 10px;">
+<div class="container" style="text-align:right; margin-top:10px;">
     <button id="theme-toggle">🌙 Toggle Dark/Light</button>
 </div>
 
-<!-- ===== MAIN CONTENT AREA ===== -->
-<h2>Login</h2>
-<input type="email" id="email" placeholder="Email" />
-<input type="password" id="password" placeholder="Password" />
-<button onclick="login()">Login</button>
-<p>Don't have an account? <a href="/Esports-fixtures/registration.html">Register</a></p>
+<main class="container">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="loginBtn">Login</button>
+    <p>Don't have an account? <a href="registration.html">Register</a></p>
+</main>
 
-<script>
-    function login() {
-        const email = document.getElementById("email").value;
-        const password = document.getElementById("password").value;
-
-        auth.signInWithEmailAndPassword(email, password)
-            .then(() => window.location.href = "dashboard.html")
-            .catch(error => alert(error.message));
-    }
-</script>
-
-<!-- ===== BANNER ===== -->
 <div id="banner-container"></div>
 <script>
     fetch("banner.html")
@@ -61,22 +35,57 @@
         .catch(err => console.error("Banner load failed:", err));
 </script>
 
-<!-- ===== FOOTER + LIVE UPDATES ===== -->
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script src="js/firebase-loader.js"></script>
+
+<!-- fallback waiter -->
+<script>
+    if (!window.firebaseReady) {
+        console.warn("⚠️ firebase-init.js not loaded yet — waiting for Firebase to initialize...");
+        window.firebaseReady = new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+                if (window.firebase && firebase.apps && firebase.apps.length > 0 && firebase.auth) {
+                    clearInterval(checkInterval);
+                    window.db = window.db || firebase.firestore();
+                    window.auth = window.auth || firebase.auth();
+                    console.log("✅ Firebase fallback initialization complete (index)");
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+</script>
+
+<script>
+    window.firebaseReady.then(() => {
+        document.getElementById("loginBtn").addEventListener("click", () => {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => window.location.href = "dashboard.html")
+                .catch(error => alert(error.message));
+        });
+    });
+</script>
+
+<!-- footer -->
 <script>
     fetch("footer.html")
         .then(res => res.text())
         .then(html => {
             document.body.insertAdjacentHTML("beforeend", html);
-
-            // Fetch latest updates for the news banner
-            db.collection("updates")
-                .orderBy("timestamp", "desc")
-                .limit(5)
-                .onSnapshot(snapshot => {
-                    const messages = snapshot.docs.map(doc => doc.data().message);
-                    const marquee = document.getElementById("updates-marquee");
-                    if (marquee) marquee.textContent = messages.join(" ⚔️ ");
-                });
+            window.firebaseReady.then(() => {
+                db.collection("updates").orderBy("timestamp", "desc").limit(5)
+                    .onSnapshot(snapshot => {
+                        const messages = snapshot.docs.map(d => d.data().message);
+                        const marquee = document.getElementById("updates-marquee");
+                        if (marquee) marquee.textContent = messages.join(" ⚔️ ");
+                    });
+            });
         })
         .catch(err => console.error("Footer load failed:", err));
 </script>

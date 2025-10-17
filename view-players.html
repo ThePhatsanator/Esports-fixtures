@@ -112,16 +112,20 @@
             document.body.insertAdjacentHTML("beforeend", html);
 
             // Fetch latest updates for the news banner
-            db.collection("updates")
-                    .orderBy("timestamp", "desc")
-                    .limit(5)
-                    .onSnapshot(snapshot => {
-                      const messages = snapshot.docs.map(doc => doc.data().message);
-                      const marquee = document.getElementById("updates-marquee");
-                      if (marquee) marquee.textContent = messages.join(" ⚔️ ");
-                    });
-          })
-          .catch(err => console.error("Footer load failed:", err));
+            window.firebaseReady.then(() => {
+              db.collection("updates")
+                      .orderBy("timestamp", "desc")
+                      .limit(5)
+                      .onSnapshot(snapshot => {
+                        const messages = snapshot.docs.map(doc => doc.data().message);
+                        const marquee = document.getElementById("updates-marquee");
+                        if (marquee) marquee.textContent = messages.join(" ⚔️ ");
+                      });
+            })
+
+                    .catch(err => console.error("Footer load failed:", err));
+
+          });
 </script>
 </body>
 </html>

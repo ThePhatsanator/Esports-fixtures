@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enter Player Stats</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+  <span class="logo">Player Stats</span>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="view-fixtures.html">Fixtures</a>
+    <button id="themeToggle">🌙</button>
+  </nav>
+</div>
+
+<div class="container">
+  <h2>Enter Player Stats</h2>
+
+  <label for="fixtureSelect">Select Fixture</label>
+  <select id="fixtureSelect">
+    <option value="">Loading fixtures...</option>
+  </select>
+
+  <label for="playerName">Player Name</label>
+  <input type="text" id="playerName" placeholder="Enter player name">
+
+  <label for="teamName">Team</label>
+  <input type="text" id="teamName" placeholder="Enter team name">
+
+  <label for="kills">Kills</label>
+  <input type="number" id="kills" placeholder="0">
+
+  <label for="deaths">Deaths</label>
+  <input type="number" id="deaths" placeholder="0">
+
+  <label for="assists">Assists</label>
+  <input type="number" id="assists" placeholder="0">
+
+  <label for="matchResult">Match Result</label>
+  <select id="matchResult">
+    <option value="Win">Win</option>
+    <option value="Loss">Loss</option>
+  </select>
+
+  <button id="saveStatsBtn">Save Stats</button>
+
+  <p id="saveMessage"></p>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<!-- Firebase Init -->
+<script src="firebase-loader.js"></script>
+
+<!-- Theme Toggle -->
+<script src="theme-toggle.js"></script>
+
+<!-- Page Logic -->
+<script>
+  window.firebaseReady.then(() => {
+    console.log("🔥 Firebase ready — Enter Player Stats Page");
+
+    const fixtureSelect = document.getElementById("fixtureSelect");
+    const saveStatsBtn = document.getElementById("saveStatsBtn");
+    const saveMessage = document.getElementById("saveMessage");
+
+    // Load fixtures into dropdown
+    db.collection("fixtures").orderBy("date", "desc").get().then(snapshot => {
+      fixtureSelect.innerHTML = '<option value="">Select Fixture</option>';
+      snapshot.forEach(doc => {
+        const f = doc.data();
+        const option = document.createElement("option");
+        option.value = doc.id;
+        option.textContent = `${f.teamA} vs ${f.teamB} (${f.date})`;
+        fixtureSelect.appendChild(option);
+      });
+    });
+
+    // Save player stats
+    saveStatsBtn.addEventListener("click", async () => {
+      const fixtureId = fixtureSelect.value;
+      const playerName = document.getElementById("playerName").value.trim();
+      const teamName = document.getElementById("teamName").value.trim();
+      const kills = Number(document.getElementById("kills").value);
+      const deaths = Number(document.getElementById("deaths").value);
+      const assists = Number(document.getElementById("assists").value);
+      const matchResult = document.getElementById("matchResult").value;
+
+      if (!fixtureId || !playerName || !teamName) {
+        saveMessage.textContent = "⚠️ Please fill out all required fields.";
+        return;
+      }
+
+      try {
+        await db.collection("fixtures")
+                .doc(fixtureId)
+                .collection("stats")
+                .add({
+                  playerName,
+                  team: teamName,
+                  kills,
+                  deaths,
+                  assists,
+                  matchResult,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+        saveMessage.textContent = "✅ Player stats saved successfully!";
+        document.querySelectorAll("input").forEach(i => i.value = "");
+      } catch (err) {
+        console.error("Error saving stats:", err);
+        saveMessage.textContent = "❌ Failed to save stats.";
+      }
+    });
+  });
+</script>
+</body>
+</html>

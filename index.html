@@ -27,6 +27,25 @@
     <p>Don't have an account? <a href="registration.html">Register</a></p>
 </main>
 
+<p style="margin-top:10px; text-align:center;">
+    <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+</p>
+
+<!-- 🔹 Password Reset Modal -->
+<div id="resetModal" class="modal">
+    <div class="modal-content">
+        <h3>Reset Password</h3>
+        <p>Enter your email address to receive a reset link.</p>
+        <input type="email" id="resetEmail" placeholder="Email address">
+        <div class="modal-actions">
+            <button id="sendResetBtn">Send Reset Link</button>
+            <button id="closeResetBtn" class="cancel">Cancel</button>
+        </div>
+        <p id="resetMessage" class="message"></p>
+    </div>
+</div>
+
+
 <div id="banner-container"></div>
 <script>
     fetch("banner.html")
@@ -71,6 +90,51 @@
                 .then(() => window.location.href = "dashboard.html")
                 .catch(error => alert(error.message));
         });
+    });
+</script>
+
+<script>
+    const resetModal = document.getElementById("resetModal");
+    const resetEmail = document.getElementById("resetEmail");
+    const resetMsg = document.getElementById("resetMessage");
+    const forgotLink = document.getElementById("forgotPasswordLink");
+
+    forgotLink.addEventListener("click", e => {
+        e.preventDefault();
+        resetModal.style.display = "flex";
+    });
+
+    document.getElementById("closeResetBtn").addEventListener("click", () => {
+        resetModal.style.display = "none";
+        resetMsg.textContent = "";
+        resetEmail.value = "";
+    });
+
+    document.getElementById("sendResetBtn").addEventListener("click", () => {
+        const email = resetEmail.value.trim();
+        if (!email) {
+            resetMsg.textContent = "⚠️ Please enter your email.";
+            resetMsg.style.color = "orange";
+            return;
+        }
+
+        firebase.auth().sendPasswordResetEmail(email)
+            .then(() => {
+                resetMsg.textContent = "✅ Reset email sent! Check your inbox.";
+                resetMsg.style.color = "green";
+            })
+            .catch((error) => {
+                resetMsg.textContent = "❌ " + error.message;
+                resetMsg.style.color = "red";
+            });
+    });
+
+    // Close modal when clicking outside of it
+    window.addEventListener("click", (e) => {
+        if (e.target === resetModal) {
+            resetModal.style.display = "none";
+            resetMsg.textContent = "";
+        }
     });
 </script>
 

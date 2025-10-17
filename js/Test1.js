@@ -9,54 +9,25 @@ const firebaseConfig = {
     measurementId: "G-FDY4LLXBYM"
 };
 
+// ===== SAFE FIREBASE INITIALIZATION =====
+window.firebaseReady = new Promise((resolve, reject) => {
+    try {
+        // Initialize only if not already done
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log("🔥 Firebase initialized (first load)");
+        } else {
+            console.log("♻️ Firebase already initialized");
+        }
 
+        // Make Firebase global
+        window.db = firebase.firestore();
+        window.auth = firebase.auth();
 
-
-// ===== THEME FUNCTIONS =====
-function applyTheme(theme) {
-    if (theme === "dark") {
-        document.body.classList.add("dark-mode");
-        console.log("🌙 Dark mode applied");
-    } else {
-        document.body.classList.remove("dark-mode");
-        console.log("☀️ Light mode applied");
+        console.log("✅ Firebase fully loaded and ready");
+        resolve();
+    } catch (error) {
+        console.error("❌ Firebase failed to load:", error);
+        reject(error);
     }
-}
-
-function attachThemeToggle() {
-    const toggleBtn = document.getElementById("theme-toggle");
-    if (!toggleBtn) {
-        console.warn("⚠️ Theme toggle button not found (navbar may not be loaded yet)");
-        return;
-    }
-
-    // Apply saved theme
-    const savedTheme = localStorage.getItem("theme") || "light";
-    applyTheme(savedTheme);
-
-    // Handle toggle
-    toggleBtn.addEventListener("click", () => {
-        let currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
-        let newTheme = currentTheme === "dark" ? "light" : "dark";
-        applyTheme(newTheme);
-        localStorage.setItem("theme", newTheme);
-        console.log("🔄 Theme changed to:", newTheme);
-    });
-}
-
-
-// ===== NAVBAR LOADER =====
-document.addEventListener("DOMContentLoaded", () => {
-    // Load navbar dynamically
-    fetch("navbar.html")
-        .then(response => response.text())
-        .then(data => {
-            document.body.insertAdjacentHTML("afterbegin", data);
-            attachThemeToggle(); // ✅ Ensure the button now exists before attaching logic
-        })
-        .catch(err => console.error("❌ Navbar load failed:", err));
-
-    // Load saved theme (in case navbar fails)
-    const savedTheme = localStorage.getItem("theme") || "light";
-    applyTheme(savedTheme);
 });

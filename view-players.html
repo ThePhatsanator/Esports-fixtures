@@ -51,14 +51,17 @@
 
 <script>
   // Load teams into dropdown
-  db.collection("teams").get().then((querySnapshot) => {
-    const teamSelect = document.getElementById("teamSelect");
-    teamSelect.innerHTML = "";
-    querySnapshot.forEach((doc) => {
-      const option = document.createElement("option");
-      option.value = doc.id;
-      option.text = doc.data().teamName;
-      teamSelect.appendChild(option);
+  window.firebaseReady.then(() =>
+  {
+    db.collection("teams").get().then((querySnapshot) => {
+      const teamSelect = document.getElementById("teamSelect");
+      teamSelect.innerHTML = "";
+      querySnapshot.forEach((doc) => {
+        const option = document.createElement("option");
+        option.value = doc.id;
+        option.text = doc.data().teamName;
+        teamSelect.appendChild(option);
+      });
     });
   });
 
@@ -67,6 +70,7 @@
     const teamId = document.getElementById("teamSelect").value;
     const playerList = document.getElementById("playerList");
     playerList.innerHTML = "Loading...";
+
 
     db.collection("players")
             .where("teamId", "==", teamId)

@@ -54,8 +54,7 @@
 
 <script>
   // Load teams into dropdown
-  window.firebaseReady.then(() =>
-  {
+
     db.collection("teams").get().then((querySnapshot) => {
       const teamSelect = document.getElementById("teamSelect");
       teamSelect.innerHTML = "";
@@ -96,7 +95,7 @@
               playerList.innerHTML = "<li>Error loading players.</li>";
             });
   }
-  });
+
 </script>
 
 <!-- ===== BANNER ===== -->

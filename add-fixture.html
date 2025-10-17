@@ -4,22 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>E-Sports Fixtures | Add Fixture</title>
-
   <link rel="stylesheet" href="css/style.css">
-
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-  <!-- loader first, then Test1 -->
-
-  <script src="js/firebase-loader.js" defer></script>
-
-
-  <script src="js/Test1.js" defer></script>
-
-
-
 </head>
 <body>
 <div id="navbar-container"></div>
@@ -50,30 +35,68 @@
   <p id="statusMessage"></p>
 </main>
 
+<div id="banner-container"></div>
+<script>
+  fetch("banner.html")
+          .then(res => res.text())
+          .then(html => document.getElementById("banner-container").innerHTML = html)
+          .catch(err => console.error("Banner load failed:", err));
+</script>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<!-- Your firebase-init (keep your existing file) -->
+<script src="js/firebase-loader.js"></script>
+
+<!-- Inline fallback waiter to guarantee window.firebaseReady exists -->
+<script>
+  if (!window.firebaseReady) {
+    console.warn("⚠️ firebase-init.js not loaded yet — waiting for Firebase to initialize...");
+    window.firebaseReady = new Promise((resolve) => {
+      const checkInterval = setInterval(() => {
+        if (window.firebase && firebase.apps && firebase.apps.length > 0 && firebase.auth) {
+          clearInterval(checkInterval);
+          window.db = window.db || firebase.firestore();
+          window.auth = window.auth || firebase.auth();
+          console.log("✅ Firebase fallback initialization complete (add-fixture)");
+          resolve();
+        }
+      }, 100);
+    });
+  }
+</script>
+
+<!-- Page logic (safe: uses window.firebaseReady) -->
 <script>
   window.firebaseReady.then(() => {
+    console.log("🔥 Firebase ready — add-fixture page");
     const teamASelect = document.getElementById("teamA");
     const teamBSelect = document.getElementById("teamB");
     const statusMsg = document.getElementById("statusMessage");
 
     // Load teams into dropdowns
-    db.collection("teams").get().then((querySnapshot) => {
-      teamASelect.innerHTML = "<option disabled selected>Select Team A</option>";
-      teamBSelect.innerHTML = "<option disabled selected>Select Team B</option>";
-
-      querySnapshot.forEach((doc) => {
-        const team = doc.data().teamName || doc.data().name || "(Unnamed)";
-        const optionA = document.createElement("option");
-        optionA.value = team;
-        optionA.text = team;
-        teamASelect.appendChild(optionA);
-
-        const optionB = document.createElement("option");
-        optionB.value = team;
-        optionB.text = team;
-        teamBSelect.appendChild(optionB);
-      });
-    });
+    db.collection("teams").get()
+            .then((querySnapshot) => {
+              teamASelect.innerHTML = "<option disabled selected>Select Team A</option>";
+              teamBSelect.innerHTML = "<option disabled selected>Select Team B</option>";
+              if (querySnapshot.empty) {
+                teamASelect.innerHTML = "<option disabled>No teams found</option>";
+                teamBSelect.innerHTML = "<option disabled>No teams found</option>";
+                return;
+              }
+              querySnapshot.forEach((doc) => {
+                const team = doc.data().teamName || doc.data().name || "(Unnamed)";
+                teamASelect.add(new Option(team, team));
+                teamBSelect.add(new Option(team, team));
+              });
+            })
+            .catch(err => {
+              console.error("Error loading teams:", err);
+              statusMsg.textContent = "Error loading teams.";
+            });
 
     // Add fixture handler
     document.getElementById("addFixtureBtn").addEventListener("click", () => {
@@ -97,7 +120,9 @@
         result: null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       })
-              .then(() => statusMsg.textContent = "✅ Fixture added successfully!")
+              .then(() => {
+                statusMsg.textContent = "✅ Fixture added successfully!";
+              })
               .catch((error) => {
                 statusMsg.textContent = "❌ Error: " + error.message;
                 console.error(error);
@@ -106,15 +131,7 @@
   });
 </script>
 
-
-<div id="banner-container"></div>
-<script>
-  fetch("banner.html")
-          .then(res => res.text())
-          .then(html => document.getElementById("banner-container").innerHTML = html)
-          .catch(err => console.error("Banner load failed:", err));
-</script>
-
+<!-- Footer + updates -->
 <script>
   fetch("footer.html")
           .then(res => res.text())

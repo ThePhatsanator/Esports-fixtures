@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>E-Sports Fixtures | Reports Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div id="navbar-container"></div>
+<script>
+  fetch("navbar.html").then(r => r.text()).then(html => document.getElementById("navbar-container").innerHTML = html);
+</script>
+
+<div class="container" style="text-align:right; margin-top:10px;">
+  <button id="themeToggle">🌙</button>
+</div>
+
+<main class="container">
+  <h2>📈 E-Sports Reports Dashboard</h2>
+
+  <section id="summary">
+    <h3>Overall Summary</h3>
+    <div id="summaryCards" style="display:flex; flex-wrap:wrap; gap:1rem;">
+      <div class="card">Total Fixtures: <span id="totalFixtures">0</span></div>
+      <div class="card">Total Players: <span id="totalPlayers">0</span></div>
+      <div class="card">Avg KDA: <span id="avgKDA">0.00</span></div>
+      <div class="card">Total Kills: <span id="totalKills">0</span></div>
+    </div>
+  </section>
+
+  <section style="margin-top:2rem;">
+    <h3>Average KDA per Player</h3>
+    <canvas id="kdaChart"></canvas>
+  </section>
+
+  <section style="margin-top:2rem;">
+    <h3>Total Kills per Team</h3>
+    <canvas id="teamKillsChart"></canvas>
+  </section>
+
+  <section style="margin-top:2rem;">
+    <h3>Match Results Overview</h3>
+    <canvas id="resultsChart"></canvas>
+  </section>
+</main>
+
+<div id="banner-container"></div>
+<script>
+  fetch("banner.html").then(r=>r.text()).then(html=>document.getElementById("banner-container").innerHTML = html);
+</script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="js/firebase-loader.js"></script>
+<script src="theme-toggle.js"></script>
+
+<!-- Fallback Waiter -->
+<script>
+  if (!window.firebaseReady) {
+    console.warn("⚠️ Waiting for Firebase...");
+    window.firebaseReady = new Promise((resolve) => {
+      const check = setInterval(() => {
+        if (window.firebase && firebase.apps.length > 0 && firebase.auth) {
+          clearInterval(check);
+          window.db = window.db || firebase.firestore();
+          window.auth = window.auth || firebase.auth();
+          console.log("✅ Firebase fallback ready (reports)");
+          resolve();
+        }
+      }, 100);
+    });
+  }
+</script>
+
+<!-- 📊 Reports Logic -->
+<script>
+  window.firebaseReady.then(async () => {
+    const dbRef = db;
+    const playerStats = {};
+    const teamStats = {};
+    const resultsCount = { Win: 0, Loss: 0, Draw: 0 };
+    let totalFixtures = 0;
+    let totalKills = 0;
+    let totalKDA = 0;
+    let playerCount = 0;
+
+    try {
+      const fixturesSnap = await dbRef.collection("fixtures").get();
+      totalFixtures = fixturesSnap.size;
+
+      for (const fixture of fixturesSnap.docs) {
+        const statsSnap = await fixture.ref.collection("stats").get();
+        statsSnap.forEach(doc => {
+          const s = doc.data();
+          if (!s.playerName) return;
+          const key = s.playerName.toLowerCase();
+
+          // Player stats
+          if (!playerStats[key]) {
+            playerStats[key] = { name: s.playerName, kills: 0, deaths: 0, assists: 0, matches: 0 };
+            playerCount++;
+          }
+
+          playerStats[key].kills += Number(s.kills) || 0;
+          playerStats[key].deaths += Number(s.deaths) || 0;
+          playerStats[key].assists += Number(s.assists) || 0;
+          playerStats[key].matches++;
+
+          // Team stats
+          const team = s.team || "Unknown";
+          if (!teamStats[team]) teamStats[team] = 0;
+          teamStats[team] += Number(s.kills) || 0;
+
+          // Match results
+          if (s.matchResult) {
+            if (resultsCount[s.matchResult]) resultsCount[s.matchResult]++;
+            else resultsCount[s.matchResult] = 1;
+          }
+        });
+      }
+
+      // Compute averages
+      const kdAs = [];
+      Object.values(playerStats).forEach(p => {
+        const avgKills = p.kills / p.matches;
+        const avgDeaths = p.deaths / p.matches || 1;
+        const avgAssists = p.assists / p.matches;
+        const avgKDA = (avgKills + avgAssists) / avgDeaths;
+        kdAs.push(avgKDA);
+        totalKDA += avgKDA;
+        totalKills += p.kills;
+      });
+
+      // Update summary
+      document.getElementById("totalFixtures").textContent = totalFixtures;
+      document.getElementById("totalPlayers").textContent = playerCount;
+      document.getElementById("avgKDA").textContent = (totalKDA / playerCount).toFixed(2);
+      document.getElementById("totalKills").textContent = totalKills;
+
+      // 🧮 Charts
+      const kdaCtx = document.getElementById("kdaChart").getContext("2d");
+      new Chart(kdaCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.values(playerStats).map(p => p.name),
+          datasets: [{
+            label: 'Average KDA',
+            data: Object.values(playerStats).map(p => {
+              const avgKills = p.kills / p.matches;
+              const avgDeaths = p.deaths / p.matches || 1;
+              const avgAssists = p.assists / p.matches;
+              return ((avgKills + avgAssists) / avgDeaths).toFixed(2);
+            })
+          }]
+        },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
+
+      const teamCtx = document.getElementById("teamKillsChart").getContext("2d");
+      new Chart(teamCtx, {
+        type: 'pie',
+        data: {
+          labels: Object.keys(teamStats),
+          datasets: [{
+            label: 'Total Kills',
+            data: Object.values(teamStats)
+          }]
+        }
+      });
+
+      const resultsCtx = document.getElementById("resultsChart").getContext("2d");
+      new Chart(resultsCtx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(resultsCount),
+          datasets: [{
+            data: Object.values(resultsCount),
+            label: 'Match Results'
+          }]
+        }
+      });
+
+    } catch (err) {
+      console.error("Error generating report:", err);
+    }
+  });
+</script>
+
+<!-- Footer -->
+<script>
+  fetch("footer.html").then(r=>r.text()).then(html=>{
+    document.body.insertAdjacentHTML("beforeend", html);
+  });
+</script>
+
+<style>
+  .card {
+    background: var(--card-bg, #f9f9f9);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    min-width: 150px;
+    text-align: center;
+  }
+</style>
+</body>
+</html>

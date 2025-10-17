@@ -48,16 +48,32 @@
     <button onclick="addPlayer()">Add Player</button>
 
     <script>
-        // Load teams from Firestore
-        db.collection("teams").get().then((querySnapshot) => {
-            const teamSelect = document.getElementById("teamSelect");
-            teamSelect.innerHTML = "";
-            querySnapshot.forEach((doc) => {
-                const option = document.createElement("option");
-                option.value = doc.id;
-                option.text = doc.data().teamName;
-                teamSelect.appendChild(option);
-            });
+        document.addEventListener("DOMContentLoaded", () => {
+            // Wait until Firebase is ready
+            if (typeof db === "undefined") {
+                console.error("❌ Firebase not initialized — check js/Test1.js");
+                return;
+            }
+
+            console.log("✅ Firebase connected, loading teams...");
+
+            db.collection("teams").get().then((querySnapshot) => {
+                const teamSelect = document.getElementById("teamSelect");
+                teamSelect.innerHTML = "";
+                if (querySnapshot.empty) {
+                    teamSelect.innerHTML = "<option disabled>No teams found</option>";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    console.log("Team fetched:", data); // 👈 Debug log
+                    const option = document.createElement("option");
+                    option.value = doc.id;
+                    option.text = data.teamName || data.name || "(Unnamed)";
+                    teamSelect.appendChild(option);
+                });
+            }).catch(err => console.error("🔥 Firestore fetch error:", err));
         });
 
         function addPlayer() {
